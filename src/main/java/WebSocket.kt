@@ -15,7 +15,7 @@ class WebSocket(port: Int, private var apiAddress: String) : WebSocketServer(Ine
     val gson: Gson = Gson()
 
     override fun onOpen(p0: WebSocket?, p1: ClientHandshake?) {
-        api = ApiSubscriptor(this, apiAddress)
+        api = ApiSubscriptor(this, apiAddress, gson)
         api.startListening()
         println("connected")
     }
@@ -36,7 +36,7 @@ class WebSocket(port: Int, private var apiAddress: String) : WebSocketServer(Ine
     }
 
     override fun onError(p0: WebSocket?, p1: Exception?) {
-        api.stopListening()
+//        api.stopListening()
         println("ERROR!")
         p1?.printStackTrace()
     }
