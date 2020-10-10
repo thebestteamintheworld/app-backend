@@ -11,32 +11,31 @@ class WebSocket(port: Int, private var apiAddress: String) : WebSocketServer(Ine
     private lateinit var api: ApiSubscriptor
 
 
-    val gson: Gson = Gson()
+    private val gson: Gson = Gson()
 
     override fun onOpen(p0: WebSocket?, p1: ClientHandshake?) {
         api = ApiSubscriptor(this, apiAddress, gson)
         api.startListening()
-        println("connected")
+        println("NEW CONNECTION")
     }
 
     override fun onClose(p0: WebSocket?, p1: Int, p2: String?, p3: Boolean) {
         api.stopListening()
-        println("closed")
+        println("CONNECTION CLOSED")
     }
 
     override fun onMessage(p0: WebSocket?, p1: String?) {
-        if (p1?.length!! > 100) stop()
+        if (p1?.length!! > 200) stop()
         println(p1)
         processMessage(p1)
     }
 
     override fun onStart() {
-        println("started")
+        println("WEBSOCKET STARTED")
     }
 
     override fun onError(p0: WebSocket?, p1: Exception?) {
-//        api.stopListening()
-        println("ERROR!")
+        println("WEBSOCKET ERROR!")
         p1?.printStackTrace()
     }
 
@@ -57,10 +56,10 @@ class WebSocket(port: Int, private var apiAddress: String) : WebSocketServer(Ine
                     api.setMarkup(request.new!!)
                 }
                 else -> {
-//                stop()
                 }
             }
         } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 }

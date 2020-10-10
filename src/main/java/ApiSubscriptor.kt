@@ -8,44 +8,54 @@ import com.google.gson.Gson
 class ApiSubscriptor(private var ws: WebSocket, private var apiAddress: String, private var gson: Gson) {
 
     private var symbols: List<String> = listOf("USD/HKD:AFX{mm=CFH2}")
-    private var symbol: String = "EUR/USD:AFX{mm=CFH2}"
-    private var keepListening: Boolean = true
 
-    //    private lateinit var sub: DXFeedSubscription<Quote>
     private lateinit var listener: DXFeedEventListener<Quote>
 
     private var markup: Double = 1.0
 
-    private lateinit var pointer: DXFeedSubscription<Quote>
+    private lateinit var sub: DXFeedSubscription<Quote>
+
+    private val sleep: Long = 1000L
 
     fun startListening() {
         listener = DXFeedEventListener { events ->
+            val quotesToSend: MutableList<Quote> = mutableListOf<Quote>()
+
             for (quote in events) {
-                println(gson.toJson(quote))
-                ws.broadcast(gson.toJson(quote))
                 println(this.symbols)
+                if (!quotesToSend.any { q -> q.eventSymbol == quote.eventSymbol })
+                    quotesToSend.add(quote)
             }
+
+            for (quote in quotesToSend) {
+                quote.bidPrice *= markup
+                quote.askPrice *= markup
+                ws.broadcast(gson.toJson(quote))
+                println(gson.toJson(quote))
+            }
+
+            Thread.sleep(sleep)
         }
         val feed = DXEndpoint.create().connect(apiAddress).feed
-        val sub: DXFeedSubscription<Quote> = feed.createSubscription(Quote::class.java).apply {
+        sub = feed.createSubscription(Quote::class.java).apply {
             addEventListener(listener)
-            addSymbols(symbol)
+            addSymbols(symbols)
         }
-        pointer = sub
     }
 
     fun stopListening() {
-        pointer.removeEventListener(listener)
+        sub.removeEventListener(listener)
     }
 
     fun changeSymbols(symbols: List<String>) {
-        pointer.removeSymbols(this.symbols)
-        pointer.setSymbols(symbols.map { symbol -> "$symbol:AFX{mm=CFH2}" })
-        println(pointer.symbols)
+        sub.removeSymbols(this.symbols)
+        this.symbols = symbols.map { symbol -> "$symbol:AFX{mm=CFH2}" }
+        sub.setSymbols(this.symbols)
+        println(sub.symbols)
     }
 
     fun setMarkup(new: Double) {
-        markup = new
+        this.markup = new
     }
 
 }
