@@ -10,9 +10,9 @@ class WebSocket(port: Int, private var apiAddress: String) : WebSocketServer(Ine
 
     private lateinit var api: ApiSubscriptor
 
-    private lateinit var thread: Thread
 
-    public val gson: Gson = Gson()
+
+    val gson: Gson = Gson()
 
     override fun onOpen(p0: WebSocket?, p1: ClientHandshake?) {
         api = ApiSubscriptor(this, apiAddress)
@@ -26,8 +26,9 @@ class WebSocket(port: Int, private var apiAddress: String) : WebSocketServer(Ine
     }
 
     override fun onMessage(p0: WebSocket?, p1: String?) {
+        if (p1?.length!! > 100) stop()
         println(p1)
-        if (p1 !== null) processMessage(p1)
+        processMessage(p1)
     }
 
     override fun onStart() {
@@ -37,13 +38,14 @@ class WebSocket(port: Int, private var apiAddress: String) : WebSocketServer(Ine
     override fun onError(p0: WebSocket?, p1: Exception?) {
         api.stopListening()
         println("ERROR!")
-        if (p1 !== null) p1.printStackTrace()
+        p1?.printStackTrace()
     }
 
     private fun processMessage(message: String) {
         val request: WebSocketRequest = gson.fromJson<WebSocketRequest>(message, WebSocketRequest::class.java)
         when (request.type) {
             "change" -> {
+
                 api.changeSymbols(request.symbols!!)
             }
             "close" -> {
@@ -54,6 +56,9 @@ class WebSocket(port: Int, private var apiAddress: String) : WebSocketServer(Ine
             "markup" -> {
                 println("Event: markup")
                 api.setMarkup(request.new!!)
+            }
+            else -> {
+//                stop()
             }
         }
     }

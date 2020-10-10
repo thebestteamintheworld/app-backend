@@ -3,5 +3,5 @@ class WebSocketRequest(
         val to: String? = null,
         val from: String? = null,
         val new: Double? = null,
-        val symbols: Array<String>? = null,
+        val symbols: List<String>? = null,
 )

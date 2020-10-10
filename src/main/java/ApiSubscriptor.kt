@@ -6,8 +6,8 @@ import com.dxfeed.event.market.Quote
 
 class ApiSubscriptor(private var ws: WebSocket, private var apiAddress: String) {
 
-    private var symbols: List<String> = listOf("USD/CNH:AFX{mm=CFH2}")
-    private var symbol: String = "USD/CNH:AFX{mm=CFH2}"
+    private var symbols: List<String> = listOf("USD/HKD:AFX{mm=CFH2}")
+    private var symbol: String = "EUR/USD:AFX{mm=CFH2}"
     private var keepListening: Boolean = true
 
     private lateinit var sub: DXFeedSubscription<Quote>
@@ -15,30 +15,28 @@ class ApiSubscriptor(private var ws: WebSocket, private var apiAddress: String) 
 
     private var markup: Double = 1.0
 
-    public fun startListening() {
+    private lateinit var pointer: DXFeedSubscription<Quote>
+
+     fun startListening() {
         val feed = DXEndpoint.create().connect(apiAddress).feed
-        listener = DXFeedEventListener {
-            fun eventsReceived(events: List<Quote?>?) {
-                for (quote in events!!) {
-                    ws.broadcast(quote.toString())
-                }
-            }
+        val sub: DXFeedSubscription<Quote> = feed.createSubscription(Quote::class.java).apply {
+            addEventListener(DXFeedEventListener<Quote> { events -> for (quote in events) println(quote.toString()) })
+            addSymbols(symbol)
         }
-        sub = feed.createSubscription(Quote::class.java).apply {
-            addEventListener(listener)
-        }
-        sub.setSymbols(symbols)
+        pointer = sub
     }
 
-    public fun stopListening() {
-        sub.removeEventListener(listener)
+     fun stopListening() {
+        pointer.removeEventListener(listener)
     }
 
-    public fun changeSymbols(symbols: Array<String>) {
-        sub.setSymbols(symbols)
+     fun changeSymbols(symbols: List<String>) {
+        println("${symbols[0]} ${symbols[1]}")
+        pointer.setSymbols(symbols.map { symbol -> "$symbol:AFX{mm=CFH2}" })
+        println(pointer.symbols)
     }
 
-    public fun setMarkup(new: Double) {
+     fun setMarkup(new: Double) {
         markup = new
     }
 
