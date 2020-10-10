@@ -1,0 +1,17 @@
+com.dxfeed.annotation
+com.dxfeed.api
+com.dxfeed.api.osub
+com.dxfeed.event
+com.dxfeed.event.candle
+com.dxfeed.event.market
+com.dxfeed.event.misc
+com.dxfeed.event.option
+com.dxfeed.glossary
+com.dxfeed.ipf
+com.dxfeed.ipf.live
+com.dxfeed.ipf.option
+com.dxfeed.model
+com.dxfeed.model.market
+com.dxfeed.ondemand
+com.dxfeed.promise
+com.dxfeed.schedule
