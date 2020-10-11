@@ -36,7 +36,7 @@ class ApiServer(private val serverPort: Int, private val apiSubscriptor: ApiSubs
         override fun handle(exchange: HttpExchange?) {
             val response = processMessage(getContent(exchange))
             val bytes = response.toByteArray()
-            exchange!!.responseHeaders.set("Access-Control-Allow-Origin","*")
+            exchange!!.responseHeaders.set("Access-Control-Allow-Origin", "*")
             exchange!!.sendResponseHeaders(200, response.length.toLong())
             val os = exchange.responseBody
             os.write(bytes)
@@ -62,21 +62,23 @@ class ApiServer(private val serverPort: Int, private val apiSubscriptor: ApiSubs
                 "get" -> {
                     val symbols: List<String> = request.symbols!!.map { "$it:AFX{mm=CFH2}" }
                     var b = apiSubscriptor.getQuotesBySymbols(symbols)
-                    var a: String
-                    if (request.markup.equals("fixed"))
-                        a = gson.toJson(b.map { QuoteJSON(it.eventSymbol, it.getFixedMarkedupBid(), it.getFloatMarkedupAsk()) })
-                    else
-                        a = gson.toJson(b.map { QuoteJSON(it.eventSymbol, it.getFloatMarkedupBid(), it.getFloatMarkedupAsk()) })
-                    println(b.toString())
-                    println(a)
-                    return a
-                }
-                "set"->{
-                    val value = request.value
-                    val symbols = request.symbols
-                    apiSubscriptor.setMarkupToSymbols(value!!, symbols!!)
 
-                    return "{set: 'ok'}"
+                    val a1 = gson.toJson(b.map { QuoteJSON(it.eventSymbol, it.getFixedMarkedupBid(), it.getFixedMarkedupAsk(), it.getFixedMarkedUpSpread()) })
+                    val a2 = gson.toJson(b.map { QuoteJSON(it.eventSymbol, it.getFloatMarkedupBid(), it.getFloatMarkedupAsk(), it.getFloatMarkedUpSpread()) })
+                    val a3 = gson.toJson(b.map { QuoteJSON(it.eventSymbol, it.bidPrice, it.askPrice, it.askPrice - it.bidPrice) })
+
+                    val result = ("{\"fixed\":$a1,\"float\":$a2,\"none\":$a3}")
+
+//                    println("Result:$result")
+
+                   return result
+                }
+                "set" -> {
+                    val value = request.value
+                    val symbols = request.symbols!!.map { "$it:AFX{mm=CFH2}" }
+                    apiSubscriptor.setMarkupToSymbols(value!!, symbols!!)
+                    println("$value markup set")
+                    return "{'set': 'ok'}"
                 }
                 else -> {
                     return "{error: 123}"

@@ -7,11 +7,12 @@ import kotlin.system.exitProcess
 data class QuoteJSON(
         val symbol: String,
         val bid: Double,
-        val ask: Double
+        val ask: Double,
+        val spread: Double
 )
 
 class QuoteExtended : Quote {
-    var markup: Double = 0.0
+    var markup: Double
         get() = field
         set(value) {
             field = value
@@ -26,11 +27,19 @@ class QuoteExtended : Quote {
     }
 
     fun getFloatMarkedupBid(): Double {
-        return this.bidPrice * (1.0 - markup)
+        return (1.0 - markup*(this.askPrice-this.bidPrice)/(this.askPrice+this.bidPrice))*this.bidPrice
     }
 
     fun getFloatMarkedupAsk(): Double {
-        return (this.askPrice - this.bidPrice) * (1 + markup) + this.bidPrice
+        return (1.0 + markup*(this.askPrice-this.bidPrice)/(this.askPrice+this.bidPrice))*this.askPrice
+    }
+
+    fun getFloatMarkedUpSpread(): Double {
+        return getFloatMarkedupAsk() - getFloatMarkedupBid()
+    }
+
+    fun getFixedMarkedUpSpread(): Double {
+        return getFixedMarkedupAsk() - getFixedMarkedupBid()
     }
 
     constructor(q: Quote, markup: Double = 0.0) : super(q.eventSymbol) {
@@ -135,9 +144,12 @@ class ApiSubscriptor {
 
             for (quote in events) {
                 var markup: Double = 0.0
-                lastQuotesCopy.removeIf { it -> run{
-                    markup = it.markup
-                    it.eventSymbol.equals(quote.eventSymbol)} }
+                lastQuotesCopy.removeIf { it ->
+                    run {
+                        markup = it.markup
+                        it.eventSymbol.equals(quote.eventSymbol)
+                    }
+                }
 
                 lastQuotesCopy.add(QuoteExtended(quote, markup))
             }
@@ -217,7 +229,8 @@ class ApiSubscriptor {
         this.pauseFlag = false
         return list
     }
-    fun setMarkupToSymbols(value: Double, symbols: List<String>){
+
+    fun setMarkupToSymbols(value: Double, symbols: List<String>) {
         this.pauseFlag = true
         this.lastQuotes.forEach {
             if (symbols.contains(it.eventSymbol)) it.markup = value
